@@ -1,0 +1,160 @@
+{% extends 'base.html' %}
+
+{% block title %}Photo of the Day | {{ couple_settings.app_title }}{% endblock %}
+
+{% block content %}
+<div style="margin-bottom: 20px;">
+  <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+    <h2 style="font-size: 1.4rem; font-weight: 800; color: var(--text-primary); display: flex; align-items: center; gap: 8px;">
+      <span>📷</span>
+      <span>Photo of the Day</span>
+    </h2>
+    <span class="status-badge" style="background: var(--badge-bg); color: var(--badge-text);">
+      {{ today|date:"M j, Y" }}
+    </span>
+  </div>
+  <p style="font-size: 0.88rem; color: var(--text-secondary);">
+    A shared visual diary of our days across the miles. Snap a little moment to share!
+  </p>
+</div>
+
+<!-- 1. UPLOAD TODAY'S PHOTO CARD -->
+<div class="card" style="border: 2px dashed var(--accent-pink); background: var(--bg-card);">
+  <div class="card-title">
+    <span>✨</span>
+    <span>{% if my_today_photo %}Update Today's Photo{% else %}Share Today's Photo{% endif %}</span>
+  </div>
+
+  <form action="{% url 'upload_photo' %}" method="POST" enctype="multipart/form-data">
+    {% csrf_token %}
+
+    <!-- Image Preview Container -->
+    <div id="image-preview-wrapper" style="display: none; margin-bottom: 14px; text-align: center;">
+      <div style="display: inline-block; background: #FFF; padding: 10px 10px 20px 10px; border-radius: var(--radius-sm); box-shadow: var(--shadow-md); border: 1px solid var(--border-color); max-width: 260px;">
+        <img id="image-preview" src="#" alt="Preview" style="width: 100%; height: 200px; object-fit: cover; border-radius: 8px;">
+        <div style="font-size: 0.75rem; color: #888; margin-top: 8px;">Preview</div>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Choose a photo from your camera or gallery</label>
+      <input type="file" name="image" id="photo-file-input" class="form-input" accept="image/*" required>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Add a sweet caption (optional)</label>
+      <input type="text" name="caption" class="form-input" placeholder="e.g. Wish you were sitting across from me right now..." maxlength="280">
+    </div>
+
+    <button type="submit" class="primary-btn" style="width: 100%; padding: 14px; font-size: 1rem;">
+      Upload to Our Timeline 📸💕
+    </button>
+  </form>
+</div>
+
+<!-- 2. SHARED TIMELINE / POLAROID GALLERY -->
+<div style="margin-top: 28px;">
+  <h3 style="font-size: 1.15rem; font-weight: 700; color: var(--text-primary); margin-bottom: 14px; display: flex; align-items: center; gap: 8px;">
+    <span>🖼️</span>
+    <span>Our Shared Memories Timeline</span>
+  </h3>
+
+  {% if photos %}
+  <div style="display: flex; flex-direction: column; gap: 20px;">
+    {% for photo in photos %}
+    <div class="card" style="padding: 16px; background: var(--bg-card);">
+      <!-- Header -->
+      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span style="font-size: 1.3rem;">
+            {% if photo.user.profile.avatar_emoji %}{{ photo.user.profile.avatar_emoji }}{% else %}🌸{% endif %}
+          </span>
+          <div>
+            <div style="font-weight: 700; font-size: 0.95rem; color: var(--text-primary);">
+              {{ photo.user.profile.display_name|default:photo.user.username }}
+            </div>
+            <div style="font-size: 0.75rem; color: var(--text-muted);">
+              {{ photo.date|date:"F j, Y" }}
+            </div>
+          </div>
+        </div>
+
+        {% if photo.user == request.user or request.user.is_superuser %}
+        <form action="{% url 'delete_photo' photo.id %}" method="POST" onsubmit="return confirm('Delete this photo memory?');" style="margin: 0;">
+          {% csrf_token %}
+          <button type="submit" class="icon-btn" style="width: 30px; height: 30px; font-size: 0.8rem;" title="Delete photo">
+            🗑️
+          </button>
+        </form>
+        {% endif %}
+      </div>
+
+      <!-- Photo with Lightbox Click -->
+      <div style="cursor: pointer; border-radius: var(--radius-md); overflow: hidden; max-height: 450px; background: #000; text-align: center;" 
+           onclick="openLightbox('{{ photo.image.url }}', '{{ photo.caption|escapejs }}')">
+        <img src="{{ photo.image.url }}" alt="{{ photo.caption }}" style="width: 100%; height: auto; max-height: 450px; object-fit: contain; display: block; margin: 0 auto; transition: transform 0.3s ease;">
+      </div>
+
+      <!-- Caption -->
+      {% if photo.caption %}
+      <div style="margin-top: 12px; font-size: 0.98rem; color: var(--text-primary); font-style: italic; line-height: 1.4;">
+        "{{ photo.caption }}"
+      </div>
+      {% endif %}
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="card" style="text-align: center; padding: 40px 20px; color: var(--text-muted);">
+    <div style="font-size: 2.5rem; margin-bottom: 8px;">📸</div>
+    <div style="font-weight: 700; font-size: 1.05rem; color: var(--text-primary); margin-bottom: 6px;">No photos shared yet!</div>
+    <p style="font-size: 0.88rem;">Be the first to upload a photo from your day above.</p>
+  </div>
+  {% endif %}
+</div>
+
+<!-- Lightbox Modal -->
+<div id="lightbox-modal" class="modal-overlay" style="background: rgba(0,0,0,0.85);" onclick="closeLightbox()">
+  <div style="position: relative; max-width: 90vw; max-height: 90vh; text-align: center;" onclick="event.stopPropagation();">
+    <button class="icon-btn" onclick="closeLightbox()" style="position: absolute; top: -14px; right: -14px; background: #FFF; color: #000; z-index: 10;">✕</button>
+    <img id="lightbox-img" src="" alt="Full view" style="max-width: 100%; max-height: 80vh; border-radius: 12px; box-shadow: 0 10px 40px rgba(0,0,0,0.5);">
+    <div id="lightbox-caption" style="color: #FFF; margin-top: 12px; font-size: 1rem; font-style: italic;"></div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Image preview before upload
+const fileInput = document.getElementById('photo-file-input');
+const previewWrapper = document.getElementById('image-preview-wrapper');
+const previewImg = document.getElementById('image-preview');
+
+if (fileInput) {
+  fileInput.addEventListener('change', function() {
+    const file = this.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        previewImg.src = e.target.result;
+        previewWrapper.style.display = 'block';
+      };
+      reader.readAsDataURL(file);
+    }
+  });
+}
+
+function openLightbox(url, caption) {
+  const modal = document.getElementById('lightbox-modal');
+  const img = document.getElementById('lightbox-img');
+  const cap = document.getElementById('lightbox-caption');
+  img.src = url;
+  cap.textContent = caption ? `"${caption}"` : '';
+  modal.classList.add('open');
+}
+
+function closeLightbox() {
+  document.getElementById('lightbox-modal').classList.remove('open');
+}
+</script>
+{% endblock %}

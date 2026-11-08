@@ -1,0 +1,237 @@
+{% extends 'base.html' %}
+
+{% block title %}Our Day | {{ couple_settings.app_title }}{% endblock %}
+
+{% block content %}
+<!-- 1. TIMEZONE & AWAKE STATUS (Side by Side) -->
+<section class="time-grid">
+  <!-- My Card -->
+  <div class="time-card active-user" data-modal-open="profile-modal" style="cursor: pointer;" title="Tap to edit your city or timezone">
+    <div>
+      <div class="time-card-avatar">{{ my_profile.avatar_emoji|default:"🌸" }}</div>
+      <div class="time-card-name">{{ my_profile.display_name|default:user.username }} <span style="font-size: 0.75rem; color: var(--accent-pink); font-weight: normal;">(You)</span></div>
+      <div class="time-card-city">{{ my_profile.city }} ✎</div>
+      <div class="time-card-clock" data-timezone="{{ my_profile.timezone }}">
+        {{ my_profile.get_time_display }}
+      </div>
+      <div class="time-card-date">{{ my_profile.get_date_display }}</div>
+    </div>
+    
+    <div>
+      <div class="status-badge {% if my_profile.is_probably_awake %}awake{% else %}asleep{% endif %}">
+        <span class="status-dot {% if my_profile.is_probably_awake %}green{% else %}purple{% endif %}"></span>
+        {% if my_profile.is_probably_awake %}Awake{% else %}Asleep{% endif %}
+      </div>
+      <div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 6px; line-height: 1.2;">
+        {{ my_profile.status_message }}
+      </div>
+    </div>
+  </div>
+
+  <!-- Partner's Card -->
+  <div class="time-card">
+    {% if partner_profile %}
+    <div>
+      <div class="time-card-avatar">{{ partner_profile.avatar_emoji|default:"💙" }}</div>
+      <div class="time-card-name">{{ partner_profile.display_name|default:partner_user.username }}</div>
+      <div class="time-card-city">{{ partner_profile.city }}</div>
+      <div class="time-card-clock" data-timezone="{{ partner_profile.timezone }}">
+        {{ partner_profile.get_time_display }}
+      </div>
+      <div class="time-card-date">{{ partner_profile.get_date_display }}</div>
+    </div>
+
+    <div>
+      <div class="status-badge {% if partner_profile.is_probably_awake %}awake{% else %}asleep{% endif %}">
+        <span class="status-dot {% if partner_profile.is_probably_awake %}green{% else %}purple{% endif %}"></span>
+        {% if partner_profile.is_probably_awake %}Awake{% else %}Asleep{% endif %}
+      </div>
+      <div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 6px; line-height: 1.2;">
+        {{ partner_profile.status_message }}
+      </div>
+    </div>
+    {% else %}
+    <div style="padding: 20px 0; color: var(--text-muted); font-size: 0.85rem;">
+      No partner account found yet.
+    </div>
+    {% endif %}
+  </div>
+</section>
+
+<!-- 2. THINKING OF YOU BUTTON -->
+<section class="tap-heart-section">
+  <button id="tap-heart-btn" class="heart-button" type="button">
+    <span class="heart-button-icon">💖</span>
+    <span>Thinking of You, {{ partner_profile.display_name|default:"Jay" }}</span>
+  </button>
+  <div id="tap-status-note" class="tap-status-note">
+    {% if recent_sent_tap %}
+      Last sent a heart {{ recent_sent_tap.created_at|timesince }} ago 💕
+    {% else %}
+      Tap anytime to send an animated heart to {{ partner_profile.display_name|default:"Jay" }}'s screen!
+    {% endif %}
+  </div>
+</section>
+
+<!-- 3. COUNTERS (Days Together & Next Reunion) — Clickable to edit -->
+<section class="counters-grid">
+  <!-- Days Together -->
+  <div class="counter-card" data-modal-open="settings-modal" style="cursor: pointer;" title="Tap to set anniversary date">
+    <div class="counter-number">{{ couple_settings.days_together }}</div>
+    <div class="counter-label">Days Together</div>
+    <div class="counter-sub">
+      {% if couple_settings.anniversary_date %}
+        Since {{ couple_settings.anniversary_date|date:"M j, Y" }} ✎
+      {% else %}
+        Tap to set date ✎
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Next Visit Countdown -->
+  <div class="counter-card" data-modal-open="settings-modal" style="cursor: pointer;" title="Tap to edit next reunion date">
+    <div class="counter-number">
+      {% if couple_settings.days_until_visit is not None %}
+        {% if couple_settings.days_until_visit > 0 %}
+          {{ couple_settings.days_until_visit }}
+        {% elif couple_settings.days_until_visit == 0 %}
+          🎉
+        {% else %}
+          {{ couple_settings.days_until_visit|stringformat:"+d" }}
+        {% endif %}
+      {% else %}
+        —
+      {% endif %}
+    </div>
+    <div class="counter-label">
+      {% if couple_settings.days_until_visit == 0 %}
+        Together Today!
+      {% else %}
+        Days Until Reunion
+      {% endif %}
+    </div>
+    <div class="counter-sub" title="{{ couple_settings.next_visit_title }}">
+      {{ couple_settings.next_visit_title|truncatechars:24 }} ✎
+    </div>
+  </div>
+</section>
+
+<!-- 4. DAILY CHECK-IN -->
+<section class="checkin-card" id="checkin-section">
+  <div class="card-title">
+    <span>✨</span>
+    <span>Daily Check-in</span>
+  </div>
+  <p style="font-size: 0.88rem; color: var(--text-secondary); margin-bottom: 12px;">
+    {% if my_checkin %}
+      You checked in today! Feel free to update your mood or note below.
+    {% else %}
+      How are you feeling right now, love? Pick an emoji and leave a quick note.
+    {% endif %}
+  </p>
+
+  <form id="checkin-form" action="{% url 'checkin_submit' %}" method="POST">
+    {% csrf_token %}
+    
+    <!-- Emoji Pill Picker -->
+    <div class="emoji-selector">
+      {% for emoji, label in mood_choices %}
+      <button type="button" 
+              class="emoji-pill {% if my_checkin.mood_emoji == emoji or not my_checkin and forloop.first %}selected{% endif %}" 
+              data-emoji="{{ emoji }}" 
+              title="{{ label }}">
+        {{ emoji }}
+      </button>
+      {% endfor %}
+    </div>
+    <input type="hidden" name="mood_emoji" id="id_mood_emoji" value="{{ my_checkin.mood_emoji|default:'🥰' }}">
+
+    <div class="checkin-form-row">
+      <input type="text" name="note" id="checkin-note-input" class="form-input" 
+             placeholder="Today I made coffee, went on a walk, missed you..." 
+             value="{{ my_checkin.note|default:'' }}" 
+             maxlength="280" required autocomplete="off">
+      <button type="submit" id="checkin-submit-btn" class="primary-btn">
+        {% if my_checkin %}Update{% else %}Check In 💕{% endif %}
+      </button>
+    </div>
+  </form>
+
+  <!-- Partner's Latest Check-in Display -->
+  <div class="partner-checkin-box">
+    <div class="partner-checkin-header">
+      <span>
+        <strong>{{ partner_profile.display_name|default:partner_user.username }}'s</strong> Latest Check-In
+      </span>
+      <span>
+        {% if partner_checkin %}
+          {{ partner_checkin.date|date:"M j" }} ({{ partner_checkin.updated_at|timesince }} ago)
+        {% endif %}
+      </span>
+    </div>
+
+    {% if partner_checkin %}
+    <div class="partner-checkin-body">
+      <div class="partner-mood-bubble">{{ partner_checkin.mood_emoji }}</div>
+      <div class="partner-note-text">
+        "{{ partner_checkin.note }}"
+      </div>
+    </div>
+    {% else %}
+    <div style="font-size: 0.85rem; color: var(--text-muted); font-style: italic;">
+      {{ partner_profile.display_name|default:"Jay" }} hasn't checked in yet today.
+    </div>
+    {% endif %}
+  </div>
+</section>
+
+<!-- 5. QUESTION OF THE DAY TEASER -->
+<section class="card" style="border: 1.5px solid var(--accent-pink); background: linear-gradient(135deg, var(--bg-card), var(--bg-subtle));">
+  <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+    <div class="card-title" style="margin-bottom: 0;">
+      <span>💬</span>
+      <span>Question of the Day</span>
+    </div>
+    <a href="{% url 'questions' %}" style="font-size: 0.82rem; font-weight: 700; color: var(--accent-pink);">
+      Open Q&A ➔
+    </a>
+  </div>
+  <p style="font-size: 0.95rem; font-weight: 600; color: var(--text-primary); margin: 10px 0;">
+    "{{ today_question.question_text }}"
+  </p>
+
+  <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 10px;">
+    <span style="font-size: 0.8rem; color: var(--text-secondary);">
+      {% if my_today_answer and partner_today_answer %}
+        ✨ Both answered! Tap to view answers
+      {% elif my_today_answer %}
+        🔒 Your answer is locked in &bull; Waiting for {{ partner_profile.display_name|default:"Jay" }}
+      {% elif partner_today_answer %}
+        💌 {{ partner_profile.display_name|default:"Jay" }} has answered! Tap to unlock
+      {% else %}
+        ✍️ Not answered yet today
+      {% endif %}
+    </span>
+    <a href="{% url 'questions' %}" class="primary-btn" style="padding: 6px 14px; font-size: 0.82rem; text-decoration: none;">
+      {% if my_today_answer and partner_today_answer %}Read Answers 💕{% elif my_today_answer %}View Mine 🔒{% else %}Answer Now ✍️{% endif %}
+    </a>
+  </div>
+</section>
+
+<!-- 6. QUICK LINKS (PHOTOS & NOTES) -->
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px;">
+  <!-- Photos Card -->
+  <a href="{% url 'photos' %}" class="card" style="text-decoration: none; padding: 16px; text-align: center; margin-bottom: 0;">
+    <div style="font-size: 2rem; margin-bottom: 6px;">📷</div>
+    <div style="font-weight: 700; color: var(--text-primary); font-size: 0.95rem;">Photo of the Day</div>
+    <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 4px;">Shared timeline & memory album</div>
+  </a>
+
+  <!-- Love Notes Card -->
+  <a href="{% url 'notes' %}" class="card" style="text-decoration: none; padding: 16px; text-align: center; margin-bottom: 0;">
+    <div style="font-size: 2rem; margin-bottom: 6px;">💌</div>
+    <div style="font-weight: 700; color: var(--text-primary); font-size: 0.95rem;">Love Notes Wall</div>
+    <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 4px;">Pinned notes & sweet words</div>
+  </a>
+</div>
+{% endblock %}

@@ -1,0 +1,227 @@
+{% extends 'base.html' %}
+
+{% block title %}Fun & Memories | {{ couple_settings.app_title }}{% endblock %}
+
+{% block content %}
+<div style="margin-bottom: 24px;">
+  <h2 style="font-size: 1.4rem; font-weight: 800; color: var(--text-primary); display: flex; align-items: center; gap: 8px;">
+    <span>🎮</span>
+    <span>Playful & Shared Memories</span>
+  </h2>
+  <p style="font-size: 0.88rem; color: var(--text-secondary);">
+    Our little games, our couple soundtrack, and key milestones in our story.
+  </p>
+</div>
+
+<!-- =========================================================================
+     1. THIS OR THAT GAME
+     ========================================================================= -->
+<section style="margin-bottom: 30px;">
+  <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px;">
+    <h3 style="font-size: 1.15rem; font-weight: 700; color: var(--text-primary); display: flex; align-items: center; gap: 8px;">
+      <span>⚖️</span>
+      <span>This or That?</span>
+    </h3>
+    <span class="status-badge" style="background: var(--accent-pink-light); color: var(--accent-plum);">
+      Mini Game
+    </span>
+  </div>
+
+  <div style="display: flex; flex-direction: column; gap: 14px;">
+    {% for item in tot_list %}
+    <div class="card" style="padding: 18px; margin-bottom: 0;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+        <span style="font-size: 0.75rem; font-weight: 700; text-transform: uppercase; color: var(--text-muted);">
+          {{ item.question.category }}
+        </span>
+        {% if item.is_match %}
+          <span class="status-badge awake" style="font-size: 0.75rem;">💖 You Matched!</span>
+        {% elif item.my_vote and item.partner_vote %}
+          <span class="status-badge" style="font-size: 0.75rem; background: var(--bg-subtle);">☯️ Opposites Attract!</span>
+        {% elif item.my_vote %}
+          <span class="status-badge" style="font-size: 0.75rem; background: #FFF3CD; color: #856404;">⏳ Waiting on {{ partner_profile.display_name|default:"Jay" }}</span>
+        {% endif %}
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+        <!-- Option A -->
+        <form action="{% url 'vote_this_or_that' item.question.id %}" method="POST" style="margin: 0;">
+          {% csrf_token %}
+          <input type="hidden" name="choice" value="A">
+          <button type="submit" class="choice-btn {% if item.my_vote.choice == 'A' %}selected{% endif %}" style="width: 100%;">
+            <span style="font-size: 1.4rem; display: block; margin-bottom: 4px;">{{ item.question.emoji_a }}</span>
+            <span style="font-size: 0.88rem; font-weight: 600;">{{ item.question.option_a }}</span>
+            {% if item.my_vote.choice == 'A' %}
+              <div style="font-size: 0.7rem; color: var(--accent-pink); font-weight: 700; margin-top: 4px;">✓ Your pick</div>
+            {% endif %}
+            {% if item.partner_vote.choice == 'A' %}
+              <div style="font-size: 0.7rem; color: #2E7D32; font-weight: 700; margin-top: 2px;">{{ partner_profile.avatar_emoji|default:"💙" }} {{ partner_profile.display_name|default:"Jay" }}'s pick</div>
+            {% endif %}
+          </button>
+        </form>
+
+        <!-- Option B -->
+        <form action="{% url 'vote_this_or_that' item.question.id %}" method="POST" style="margin: 0;">
+          {% csrf_token %}
+          <input type="hidden" name="choice" value="B">
+          <button type="submit" class="choice-btn {% if item.my_vote.choice == 'B' %}selected{% endif %}" style="width: 100%;">
+            <span style="font-size: 1.4rem; display: block; margin-bottom: 4px;">{{ item.question.emoji_b }}</span>
+            <span style="font-size: 0.88rem; font-weight: 600;">{{ item.question.option_b }}</span>
+            {% if item.my_vote.choice == 'B' %}
+              <div style="font-size: 0.7rem; color: var(--accent-pink); font-weight: 700; margin-top: 4px;">✓ Your pick</div>
+            {% endif %}
+            {% if item.partner_vote.choice == 'B' %}
+              <div style="font-size: 0.7rem; color: #2E7D32; font-weight: 700; margin-top: 2px;">{{ partner_profile.avatar_emoji|default:"💙" }} {{ partner_profile.display_name|default:"Jay" }}'s pick</div>
+            {% endif %}
+          </button>
+        </form>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</section>
+
+<!-- =========================================================================
+     2. SHARED PLAYLIST ("OUR SOUNDTRACK")
+     ========================================================================= -->
+<section style="margin-bottom: 30px;">
+  <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px;">
+    <h3 style="font-size: 1.15rem; font-weight: 700; color: var(--text-primary); display: flex; align-items: center; gap: 8px;">
+      <span>🎵</span>
+      <span>Our Soundtrack</span>
+    </h3>
+    <button class="secondary-btn" data-modal-open="add-song-modal" style="padding: 6px 12px; font-size: 0.82rem;">
+      + Add Song 🎶
+    </button>
+  </div>
+
+  <div style="display: flex; flex-direction: column; gap: 12px;">
+    {% for song in songs %}
+    <div class="card" style="padding: 14px 18px; margin-bottom: 0; display: flex; align-items: center; justify-content: space-between; gap: 12px;">
+      <div style="display: flex; align-items: center; gap: 12px;">
+        <span style="font-size: 1.8rem;">🎧</span>
+        <div>
+          <div style="font-weight: 700; font-size: 0.98rem; color: var(--text-primary);">{{ song.title }}</div>
+          <div style="font-size: 0.82rem; color: var(--text-secondary);">{{ song.artist }} &bull; <small style="color: var(--text-muted);">Added by {{ song.added_by.profile.display_name|default:song.added_by.username }}</small></div>
+          {% if song.note %}
+          <div style="font-size: 0.8rem; color: var(--accent-pink); font-style: italic; margin-top: 4px;">"{{ song.note }}"</div>
+          {% endif %}
+        </div>
+      </div>
+
+      {% if song.url %}
+      <a href="{{ song.url }}" target="_blank" rel="noopener noreferrer" class="primary-btn" style="padding: 8px 14px; font-size: 0.8rem; text-decoration: none;">
+        Play ↗
+      </a>
+      {% endif %}
+    </div>
+    {% empty %}
+    <div class="card" style="text-align: center; padding: 24px; color: var(--text-muted);">
+      No songs added yet. Add a song that reminds you of each other!
+    </div>
+    {% endfor %}
+  </div>
+</section>
+
+<!-- =========================================================================
+     3. MILESTONES TIMELINE ("OUR STORY")
+     ========================================================================= -->
+<section style="margin-bottom: 30px;">
+  <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px;">
+    <h3 style="font-size: 1.15rem; font-weight: 700; color: var(--text-primary); display: flex; align-items: center; gap: 8px;">
+      <span>🌟</span>
+      <span>Milestones & Story</span>
+    </h3>
+    <button class="secondary-btn" data-modal-open="add-milestone-modal" style="padding: 6px 12px; font-size: 0.82rem;">
+      + Add Milestone 🌟
+    </button>
+  </div>
+
+  <div style="display: flex; flex-direction: column; gap: 14px;">
+    {% for milestone in milestones %}
+    <div class="card" style="padding: 16px; margin-bottom: 0; display: flex; align-items: flex-start; gap: 14px;">
+      <div style="font-size: 2rem; line-height: 1;">{{ milestone.emoji }}</div>
+      <div style="flex: 1;">
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px;">
+          <h4 style="font-weight: 700; font-size: 1rem; color: var(--text-primary);">{{ milestone.title }}</h4>
+          <span style="font-size: 0.78rem; font-weight: 600; color: var(--accent-pink);">{{ milestone.date|date:"F j, Y" }}</span>
+        </div>
+        {% if milestone.description %}
+        <p style="font-size: 0.88rem; color: var(--text-secondary); line-height: 1.4;">{{ milestone.description }}</p>
+        {% endif %}
+      </div>
+    </div>
+    {% empty %}
+    <div class="card" style="text-align: center; padding: 24px; color: var(--text-muted);">
+      Add milestones to track your special journey together!
+    </div>
+    {% endfor %}
+  </div>
+</section>
+
+<!-- Add Song Modal -->
+<div id="add-song-modal" class="modal-overlay">
+  <div class="modal-card">
+    <div class="modal-header">
+      <h3 class="modal-title">🎵 Add to Our Soundtrack</h3>
+      <button class="icon-btn" data-modal-close="true">✕</button>
+    </div>
+    <form action="{% url 'add_song' %}" method="POST">
+      {% csrf_token %}
+      <div class="form-group">
+        <label class="form-label">Song Title</label>
+        {{ song_form.title }}
+      </div>
+      <div class="form-group">
+        <label class="form-label">Artist</label>
+        {{ song_form.artist }}
+      </div>
+      <div class="form-group">
+        <label class="form-label">Link (Spotify, YouTube, etc.)</label>
+        {{ song_form.url }}
+      </div>
+      <div class="form-group">
+        <label class="form-label">Why it reminds me of you...</label>
+        {{ song_form.note }}
+      </div>
+      <div class="form-row-btns">
+        <button type="button" class="secondary-btn" data-modal-close="true">Cancel</button>
+        <button type="submit" class="primary-btn">Add Song 🎵</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Add Milestone Modal -->
+<div id="add-milestone-modal" class="modal-overlay">
+  <div class="modal-card">
+    <div class="modal-header">
+      <h3 class="modal-title">🌟 Add a Special Milestone</h3>
+      <button class="icon-btn" data-modal-close="true">✕</button>
+    </div>
+    <form action="{% url 'add_milestone' %}" method="POST">
+      {% csrf_token %}
+      <div class="form-group">
+        <label class="form-label">Milestone Title</label>
+        {{ milestone_form.title }}
+      </div>
+      <div class="form-group">
+        <label class="form-label">Date</label>
+        {{ milestone_form.date }}
+      </div>
+      <div class="form-group">
+        <label class="form-label">Emoji Icon</label>
+        {{ milestone_form.emoji }}
+      </div>
+      <div class="form-group">
+        <label class="form-label">Memory Note</label>
+        {{ milestone_form.description }}
+      </div>
+      <div class="form-row-btns">
+        <button type="button" class="secondary-btn" data-modal-close="true">Cancel</button>
+        <button type="submit" class="primary-btn">Save Milestone 🌟</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

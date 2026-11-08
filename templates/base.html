@@ -1,0 +1,189 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>{% block title %}{{ couple_settings.app_title }}{% endblock %}</title>
+  <link rel="stylesheet" href="{% static 'css/style.css' %}">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220%22><text y=%2226%22 font-size=%2226%22>💖</text></svg>">
+  <meta name="theme-color" content="#FFFBF7">
+  {% block extra_head %}{% endblock %}
+</head>
+<body>
+  <!-- Floating Hearts Canvas Layer -->
+  <div id="floating-hearts-layer" class="floating-hearts-layer"></div>
+
+  <div class="app-container">
+    {% if user.is_authenticated %}
+    <!-- Top Navigation Bar -->
+    <header class="top-nav">
+      <a href="{% url 'dashboard' %}" class="logo-link">
+        <span class="logo-heart">💖</span>
+        <span>{{ couple_settings.app_title }}</span>
+      </a>
+
+      <div class="top-actions">
+        <!-- Dark Mode Toggle -->
+        <button id="theme-toggle-btn" class="icon-btn" title="Toggle dark mode">🌙</button>
+
+        <!-- Edit Dates / Settings Button -->
+        <button class="icon-btn" data-modal-open="settings-modal" title="Edit anniversary & visit dates">
+          🗓️
+        </button>
+
+        <!-- Edit Profile (City & Timezone) -->
+        <button class="icon-btn" data-modal-open="profile-modal" title="Edit your city & timezone">
+          {% if my_profile.avatar_emoji %}{{ my_profile.avatar_emoji }}{% else %}⚙️{% endif %}
+        </button>
+
+        <!-- Logout -->
+        <a href="{% url 'logout' %}" class="icon-btn" title="Log out" onclick="return confirm('Ready to sign out, love?');">
+          🚪
+        </a>
+      </div>
+    </header>
+
+    <!-- Received 'Thinking of You' Heart Banner -->
+    {% if unread_tap %}
+    <div class="notification-banner">
+      <div class="notification-content">
+        <span class="notification-emoji">💌</span>
+        <div>
+          <strong>{{ partner_profile.display_name|default:partner_user.username }}</strong> was thinking of you at {{ unread_tap.created_at|date:"g:i A" }}!
+        </div>
+      </div>
+      <button id="dismiss-tap-btn" data-tap-id="{{ unread_tap.id }}" class="secondary-btn" style="padding: 6px 12px; font-size: 0.8rem;">
+        Got it 🥰
+      </button>
+    </div>
+    {% endif %}
+
+    <!-- System Messages -->
+    {% if messages %}
+    <ul class="messages-list">
+      {% for message in messages %}
+      <li class="alert alert-{{ message.tags }}">{{ message }}</li>
+      {% endfor %}
+    </ul>
+    {% endif %}
+
+    {% endif %}
+
+    <!-- Page Content -->
+    <main>
+      {% block content %}{% endblock %}
+    </main>
+
+    {% if user.is_authenticated %}
+    <!-- Mobile Bottom Navigation Dock -->
+    <nav class="bottom-dock">
+      <a href="{% url 'dashboard' %}" class="nav-item {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
+        <span class="nav-icon">🏠</span>
+        <span>Our Day</span>
+      </a>
+      <a href="{% url 'questions' %}" class="nav-item {% if request.resolver_match.url_name == 'questions' %}active{% endif %}">
+        <span class="nav-icon">💬</span>
+        <span>Daily Q</span>
+      </a>
+      <a href="{% url 'photos' %}" class="nav-item {% if request.resolver_match.url_name == 'photos' %}active{% endif %}">
+        <span class="nav-icon">📷</span>
+        <span>Photos</span>
+      </a>
+      <a href="{% url 'notes' %}" class="nav-item {% if request.resolver_match.url_name == 'notes' %}active{% endif %}">
+        <span class="nav-icon">💌</span>
+        <span>Notes</span>
+      </a>
+      <a href="{% url 'extras' %}" class="nav-item {% if request.resolver_match.url_name == 'extras' %}active{% endif %}">
+        <span class="nav-icon">🎮</span>
+        <span>Extras</span>
+      </a>
+    </nav>
+    {% endif %}
+  </div>
+
+  {% if user.is_authenticated %}
+  <!-- Settings Modal (Dates & App Title) -->
+  <div id="settings-modal" class="modal-overlay">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 class="modal-title">🗓️ Our Special Dates</h3>
+        <button class="icon-btn" data-modal-close="true">✕</button>
+      </div>
+      <form action="{% url 'update_couple_settings' %}" method="POST">
+        {% csrf_token %}
+        <div class="form-group">
+          <label class="form-label">Our Anniversary Date</label>
+          {{ settings_form.anniversary_date }}
+          <small style="color: var(--text-muted); font-size: 0.75rem;">Calculates our "Days Together" counter</small>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Next Reunion Date</label>
+          {{ settings_form.next_visit_date }}
+          <small style="color: var(--text-muted); font-size: 0.75rem;">Counts down to the day we see each other</small>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Countdown Title</label>
+          {{ settings_form.next_visit_title }}
+        </div>
+        <div class="form-group">
+          <label class="form-label">App Title</label>
+          {{ settings_form.app_title }}
+        </div>
+        <div class="form-row-btns">
+          <button type="button" class="secondary-btn" data-modal-close="true">Cancel</button>
+          <button type="submit" class="primary-btn">Save Dates 💕</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Profile Modal (City, Timezone & Schedule) -->
+  <div id="profile-modal" class="modal-overlay">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 class="modal-title">🌸 My Profile & Timezone</h3>
+        <button class="icon-btn" data-modal-close="true">✕</button>
+      </div>
+      <form action="{% url 'update_profile' %}" method="POST">
+        {% csrf_token %}
+        <div class="form-group">
+          <label class="form-label">Your Name</label>
+          {{ profile_form.display_name }}
+        </div>
+        <div class="form-group">
+          <label class="form-label">Your City</label>
+          {{ profile_form.city }}
+        </div>
+        <div class="form-group">
+          <label class="form-label">IANA Timezone (e.g. Africa/Kampala, Europe/London)</label>
+          {{ profile_form.timezone }}
+        </div>
+        <div class="form-group">
+          <label class="form-label">Avatar Emoji</label>
+          {{ profile_form.avatar_emoji }}
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+          <div class="form-group">
+            <label class="form-label">Wake Hour (0-23)</label>
+            {{ profile_form.wake_hour }}
+          </div>
+          <div class="form-group">
+            <label class="form-label">Sleep Hour (0-23)</label>
+            {{ profile_form.sleep_hour }}
+          </div>
+        </div>
+        <div class="form-row-btns">
+          <button type="button" class="secondary-btn" data-modal-close="true">Cancel</button>
+          <button type="submit" class="primary-btn">Save Profile ✨</button>
+        </div>
+      </form>
+    </div>
+  </div>
+  {% endif %}
+
+  <script src="{% static 'js/main.js' %}"></script>
+  {% block extra_js %}{% endblock %}
+</body>
+</html>

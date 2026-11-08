@@ -1,0 +1,171 @@
+{% extends 'base.html' %}
+
+{% block title %}Question of the Day | {{ couple_settings.app_title }}{% endblock %}
+
+{% block content %}
+<div style="margin-bottom: 20px;">
+  <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+    <h2 style="font-size: 1.4rem; font-weight: 800; color: var(--text-primary); display: flex; align-items: center; gap: 8px;">
+      <span>💌</span>
+      <span>Question of the Day</span>
+    </h2>
+    <span class="status-badge" style="background: var(--accent-pink-light); color: var(--accent-plum); font-weight: 700;">
+      #{{ today_question.day_number }} &bull; {{ today_question.category }}
+    </span>
+  </div>
+  <p style="font-size: 0.88rem; color: var(--text-secondary);">
+    One question each day. Answers stay completely secret until <strong>both</strong> of you have answered!
+  </p>
+</div>
+
+<!-- 1. TODAY'S QUESTION CARD -->
+<div class="card" style="border: 2px solid var(--accent-pink); background: linear-gradient(to bottom, var(--bg-card), var(--bg-subtle));">
+  <div style="font-size: 1.25rem; font-weight: 700; color: var(--text-primary); margin-bottom: 16px; line-height: 1.4;">
+    "{{ today_question.question_text }}"
+  </div>
+
+  <!-- Status pill -->
+  <div style="margin-bottom: 18px;">
+    {% if both_answered %}
+      <div class="status-badge awake" style="font-size: 0.85rem; padding: 6px 14px;">
+        ✨ Unlocked! Both of you have answered
+      </div>
+    {% elif my_answer and not partner_answer %}
+      <div class="status-badge" style="background: #FFF3CD; color: #856404; font-size: 0.85rem; padding: 6px 14px;">
+        🔒 You answered! Waiting for {{ partner_profile.display_name|default:"Jay" }} to answer...
+      </div>
+    {% elif not my_answer and partner_answer %}
+      <div class="status-badge" style="background: var(--badge-bg); color: var(--badge-text); font-size: 0.85rem; padding: 6px 14px;">
+        💌 {{ partner_profile.display_name|default:"Jay" }} has answered! Submit yours to reveal both!
+      </div>
+    {% else %}
+      <div class="status-badge" style="font-size: 0.85rem; padding: 6px 14px;">
+        ⏳ Neither of you has answered yet today
+      </div>
+    {% endif %}
+  </div>
+
+  <!-- Answers Display or Form -->
+  {% if both_answered %}
+    <!-- BOTH REVEALED! -->
+    <div style="display: flex; flex-direction: column; gap: 14px; margin-top: 10px;">
+      <!-- My Answer -->
+      <div style="background: var(--bg-card); border-radius: var(--radius-md); padding: 16px; border: 1.5px solid var(--accent-pink);">
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
+          <span style="font-weight: 700; font-size: 0.9rem; color: var(--text-primary);">
+            {{ my_profile.avatar_emoji|default:"🌸" }} {{ my_profile.display_name|default:user.username }} (You)
+          </span>
+          <span style="font-size: 0.75rem; color: var(--text-muted);">
+            {{ my_answer.created_at|date:"M j, g:i A" }}
+          </span>
+        </div>
+        <p style="font-size: 1rem; color: var(--text-primary); line-height: 1.5; font-style: italic;">
+          "{{ my_answer.answer_text }}"
+        </p>
+      </div>
+
+      <!-- Partner's Answer -->
+      <div style="background: var(--bg-card); border-radius: var(--radius-md); padding: 16px; border: 1.5px solid var(--border-color);">
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
+          <span style="font-weight: 700; font-size: 0.9rem; color: var(--text-primary);">
+            {{ partner_profile.avatar_emoji|default:"💙" }} {{ partner_profile.display_name|default:partner_user.username }}
+          </span>
+          <span style="font-size: 0.75rem; color: var(--text-muted);">
+            {{ partner_answer.created_at|date:"M j, g:i A" }}
+          </span>
+        </div>
+        <p style="font-size: 1rem; color: var(--text-primary); line-height: 1.5; font-style: italic;">
+          "{{ partner_answer.answer_text }}"
+        </p>
+      </div>
+    </div>
+
+  {% elif my_answer and not partner_answer %}
+    <!-- MY ANSWER SUBMITTED, PARTNER WAITING -->
+    <div style="background: var(--bg-card); border-radius: var(--radius-md); padding: 16px; border: 1px solid var(--border-color); margin-bottom: 14px;">
+      <div style="font-size: 0.8rem; font-weight: 700; color: var(--text-muted); margin-bottom: 6px;">
+        YOUR SECRET ANSWER:
+      </div>
+      <p style="font-size: 0.95rem; color: var(--text-primary); font-style: italic;">
+        "{{ my_answer.answer_text }}"
+      </p>
+    </div>
+
+    <!-- Sealed partner card -->
+    <div style="background: var(--bg-card); border: 2px dashed var(--accent-pink); border-radius: var(--radius-md); padding: 24px 16px; text-align: center;">
+      <div style="font-size: 2.2rem; margin-bottom: 8px;">🔒💌</div>
+      <h4 style="font-size: 1rem; color: var(--text-primary); margin-bottom: 4px;">
+        {{ partner_profile.display_name|default:"Jay" }}'s answer is locked
+      </h4>
+      <p style="font-size: 0.85rem; color: var(--text-muted);">
+        As soon as {{ partner_profile.display_name|default:"Jay" }} submits an answer, both of your thoughts will appear here!
+      </p>
+    </div>
+
+  {% else %}
+    <!-- ANSWER INPUT FORM -->
+    <form action="{% url 'submit_answer' today_question.id %}" method="POST">
+      {% csrf_token %}
+      <div class="form-group">
+        <label class="form-label" style="font-size: 0.9rem; font-weight: 700;">
+          {% if partner_answer %}
+            💌 {{ partner_profile.display_name|default:"Jay" }} has answered! What is your answer?
+          {% else %}
+            Write your answer:
+          {% endif %}
+        </label>
+        {{ answer_form.answer_text }}
+      </div>
+      <button type="submit" class="primary-btn" style="width: 100%; padding: 14px; font-size: 1rem;">
+        Lock In My Answer 🔒💕
+      </button>
+    </form>
+  {% endif %}
+</div>
+
+<!-- 2. PAST REVEALED QUESTIONS ARCHIVE -->
+{% if past_list %}
+<div style="margin-top: 30px;">
+  <h3 style="font-size: 1.15rem; font-weight: 700; color: var(--text-primary); margin-bottom: 14px; display: flex; align-items: center; gap: 8px;">
+    <span>📖</span>
+    <span>Previous Questions & Memories</span>
+  </h3>
+
+  <div style="display: flex; flex-direction: column; gap: 14px;">
+    {% for item in past_list %}
+    <div class="card" style="padding: 16px;">
+      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+        <span style="font-size: 0.78rem; font-weight: 700; color: var(--accent-pink); text-transform: uppercase;">
+          #{{ item.question.day_number }} &bull; {{ item.question.category }}
+        </span>
+        {% if item.both_answered %}
+          <span style="font-size: 0.75rem; color: #2E7D32;">✨ Both Revealed</span>
+        {% else %}
+          <span style="font-size: 0.75rem; color: var(--text-muted);">🔒 Waiting on partner</span>
+        {% endif %}
+      </div>
+      <div style="font-weight: 700; font-size: 1rem; color: var(--text-primary); margin-bottom: 12px;">
+        "{{ item.question.question_text }}"
+      </div>
+
+      {% if item.both_answered %}
+        <div style="background: var(--bg-subtle); border-radius: var(--radius-sm); padding: 12px; margin-bottom: 8px;">
+          <strong style="font-size: 0.82rem; color: var(--text-muted); display: block; margin-bottom: 2px;">{{ my_profile.display_name }}:</strong>
+          <span style="font-size: 0.9rem;">"{{ item.my_answer.answer_text }}"</span>
+        </div>
+        <div style="background: var(--bg-subtle); border-radius: var(--radius-sm); padding: 12px;">
+          <strong style="font-size: 0.82rem; color: var(--text-muted); display: block; margin-bottom: 2px;">{{ partner_profile.display_name }}:</strong>
+          <span style="font-size: 0.9rem;">"{{ item.partner_answer.answer_text }}"</span>
+        </div>
+      {% else %}
+        <div style="background: var(--bg-subtle); border-radius: var(--radius-sm); padding: 12px;">
+          <strong style="font-size: 0.82rem; color: var(--text-muted); display: block; margin-bottom: 2px;">Your Answer:</strong>
+          <span style="font-size: 0.9rem;">"{{ item.my_answer.answer_text }}"</span>
+        </div>
+      {% endif %}
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+{% endblock %}

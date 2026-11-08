@@ -1,0 +1,57 @@
+{% extends 'base.html' %}
+
+{% block title %}Welcome Home | Our Space 💕{% endblock %}
+
+{% block content %}
+<div class="auth-wrapper">
+  <div class="auth-card">
+    <div class="auth-logo">💖</div>
+    <h1 class="auth-title">Our Space</h1>
+    <p class="auth-subtitle">A private sanctuary just for Jojo & Jay</p>
+
+    <!-- Quick account fillers for easy testing -->
+    <div style="margin-bottom: 16px;">
+      <span style="font-size: 0.75rem; color: var(--text-muted); display: block; margin-bottom: 6px;">Tap to auto-fill for testing:</span>
+      <div class="quick-switch">
+        <button type="button" class="quick-user-btn" onclick="fillLogin('jojo', 'jojolove')">
+          🌸 Jojo
+        </button>
+        <button type="button" class="quick-user-btn" onclick="fillLogin('jay', 'jaylove')">
+          💙 Jay
+        </button>
+      </div>
+    </div>
+
+    <form method="POST" action="{% url 'login' %}">
+      {% csrf_token %}
+      
+      <div class="form-group" style="text-align: left;">
+        <label class="form-label" for="id_username">Username</label>
+        <input type="text" name="username" id="id_username" class="form-input" placeholder="jojo or jay" required autocomplete="username">
+      </div>
+
+      <div class="form-group" style="text-align: left; margin-bottom: 24px;">
+        <label class="form-label" for="id_password">Password</label>
+        <input type="password" name="password" id="id_password" class="form-input" placeholder="••••••••" required autocomplete="current-password">
+      </div>
+
+      <button type="submit" class="primary-btn" style="width: 100%; padding: 14px; font-size: 1.05rem;">
+        Enter Our Space 💕
+      </button>
+    </form>
+
+    <div style="margin-top: 24px; font-size: 0.8rem; color: var(--text-muted);">
+      🔒 Private space &bull; No public sign-ups allowed
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function fillLogin(user, pass) {
+  document.getElementById('id_username').value = user;
+  document.getElementById('id_password').value = pass;
+}
+</script>
+{% endblock %}

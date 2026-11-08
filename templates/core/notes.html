@@ -1,0 +1,201 @@
+{% extends 'base.html' %}
+
+{% block title %}Love Notes | {{ couple_settings.app_title }}{% endblock %}
+
+{% block extra_head %}
+<style>
+/* Sticky Note Styles */
+.notes-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 16px;
+  margin-top: 20px;
+}
+
+.sticky-note {
+  border-radius: 16px;
+  padding: 18px;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.06);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: 160px;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  border: 1px solid rgba(0,0,0,0.05);
+}
+
+.sticky-note:hover {
+  transform: translateY(-3px) rotate(-0.5deg);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+}
+
+.sticky-note.pinned {
+  border-top: 4px solid var(--accent-pink);
+}
+
+.sticky-pin-badge {
+  position: absolute;
+  top: -10px;
+  right: 14px;
+  font-size: 1.3rem;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));
+}
+
+.note-color-pink { background-color: #FFE6EB; color: #4A1224; }
+.note-color-cream { background-color: #FFF9E6; color: #4A3512; }
+.note-color-lavender { background-color: #F3E8FF; color: #381559; }
+.note-color-peach { background-color: #FFEDD5; color: #5C2809; }
+.note-color-plum { background-color: #4A1525; color: #FFF1F5; }
+
+[data-theme="dark"] .note-color-pink { background-color: #381B26; color: #FCE8EE; }
+[data-theme="dark"] .note-color-cream { background-color: #38301B; color: #FCF4DE; }
+[data-theme="dark"] .note-color-lavender { background-color: #2D1B3E; color: #F2E4FC; }
+[data-theme="dark"] .note-color-peach { background-color: #3D2518; color: #FCE8DC; }
+[data-theme="dark"] .note-color-plum { background-color: #260A14; color: #F8DCE5; border: 1px solid #5C2235; }
+
+.color-dot {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  cursor: pointer;
+  display: inline-block;
+  border: 2px solid transparent;
+  transition: transform 0.2s ease;
+}
+
+.color-dot.selected {
+  border-color: var(--accent-pink);
+  transform: scale(1.15);
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div style="margin-bottom: 20px;">
+  <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+    <h2 style="font-size: 1.4rem; font-weight: 800; color: var(--text-primary); display: flex; align-items: center; gap: 8px;">
+      <span>💌</span>
+      <span>Love Notes Wall</span>
+    </h2>
+    <button class="primary-btn" data-modal-open="add-note-modal" style="padding: 8px 14px; font-size: 0.85rem;">
+      + Leave a Note 💕
+    </button>
+  </div>
+  <p style="font-size: 0.88rem; color: var(--text-secondary);">
+    Our shared corkboard for sweet messages, inside jokes, and reminders of why I love you.
+  </p>
+</div>
+
+<!-- NOTES GRID -->
+<div class="notes-grid">
+  {% for note in notes %}
+  <div class="sticky-note note-color-{{ note.color }} {% if note.is_pinned %}pinned{% endif %}">
+    {% if note.is_pinned %}
+    <span class="sticky-pin-badge" title="Pinned to top">📌</span>
+    {% endif %}
+
+    <div>
+      <div style="font-size: 0.78rem; opacity: 0.75; margin-bottom: 8px; font-weight: 600; text-transform: uppercase;">
+        {{ note.author.profile.avatar_emoji|default:"🌸" }} {{ note.author.profile.display_name|default:note.author.username }} &bull; {{ note.created_at|date:"M j" }}
+      </div>
+      <p style="font-size: 1.02rem; line-height: 1.45; white-space: pre-line;">
+        {{ note.content }}
+      </p>
+    </div>
+
+    <!-- Actions Footer -->
+    <div style="display: flex; align-items: center; justify-content: flex-end; gap: 8px; margin-top: 14px; opacity: 0.85;">
+      <!-- Toggle Pin -->
+      <form action="{% url 'toggle_pin_note' note.id %}" method="POST" style="margin: 0;">
+        {% csrf_token %}
+        <button type="submit" class="icon-btn" style="width: 28px; height: 28px; font-size: 0.8rem; background: rgba(255,255,255,0.4);" title="{% if note.is_pinned %}Unpin note{% else %}Pin note to top{% endif %}">
+          📌
+        </button>
+      </form>
+
+      <!-- Delete Note -->
+      {% if note.author == request.user or request.user.is_superuser %}
+      <form action="{% url 'delete_love_note' note.id %}" method="POST" onsubmit="return confirm('Delete this note?');" style="margin: 0;">
+        {% csrf_token %}
+        <button type="submit" class="icon-btn" style="width: 28px; height: 28px; font-size: 0.8rem; background: rgba(255,255,255,0.4);" title="Delete note">
+          🗑️
+        </button>
+      </form>
+      {% endif %}
+    </div>
+  </div>
+  {% empty %}
+  <div class="card" style="grid-column: 1 / -1; text-align: center; padding: 40px 20px;">
+    <div style="font-size: 2.5rem; margin-bottom: 8px;">💌</div>
+    <div style="font-weight: 700; font-size: 1.1rem; color: var(--text-primary); margin-bottom: 6px;">The wall is waiting for your first note!</div>
+    <p style="font-size: 0.88rem; color: var(--text-muted); margin-bottom: 16px;">Leave an inside joke, a sweet compliment, or a love note for your partner.</p>
+    <button class="primary-btn" data-modal-open="add-note-modal">Write a Love Note 💕</button>
+  </div>
+  {% endfor %}
+</div>
+
+<!-- Add Note Modal -->
+<div id="add-note-modal" class="modal-overlay">
+  <div class="modal-card">
+    <div class="modal-header">
+      <h3 class="modal-title">💌 Write a Love Note</h3>
+      <button class="icon-btn" data-modal-close="true">✕</button>
+    </div>
+    <form action="{% url 'add_love_note' %}" method="POST">
+      {% csrf_token %}
+      <div class="form-group">
+        <label class="form-label">Your message</label>
+        <textarea name="content" class="form-input" rows="4" placeholder="Something sweet, silly, or romantic..." required></textarea>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Note Color</label>
+        <div style="display: flex; gap: 10px; margin-top: 6px;">
+          <label style="cursor: pointer;">
+            <input type="radio" name="color" value="pink" checked style="display: none;" onchange="updateColorChoice(this)">
+            <span class="color-dot selected" style="background: #FFE6EB;"></span>
+          </label>
+          <label style="cursor: pointer;">
+            <input type="radio" name="color" value="cream" style="display: none;" onchange="updateColorChoice(this)">
+            <span class="color-dot" style="background: #FFF9E6;"></span>
+          </label>
+          <label style="cursor: pointer;">
+            <input type="radio" name="color" value="lavender" style="display: none;" onchange="updateColorChoice(this)">
+            <span class="color-dot" style="background: #F3E8FF;"></span>
+          </label>
+          <label style="cursor: pointer;">
+            <input type="radio" name="color" value="peach" style="display: none;" onchange="updateColorChoice(this)">
+            <span class="color-dot" style="background: #FFEDD5;"></span>
+          </label>
+          <label style="cursor: pointer;">
+            <input type="radio" name="color" value="plum" style="display: none;" onchange="updateColorChoice(this)">
+            <span class="color-dot" style="background: #4A1525;"></span>
+          </label>
+        </div>
+      </div>
+
+      <div class="form-group" style="display: flex; align-items: center; gap: 8px;">
+        <input type="checkbox" name="is_pinned" id="id_is_pinned">
+        <label for="id_is_pinned" style="font-size: 0.9rem; color: var(--text-primary); cursor: pointer;">
+          Pin to top of the board 📌
+        </label>
+      </div>
+
+      <div class="form-row-btns">
+        <button type="button" class="secondary-btn" data-modal-close="true">Cancel</button>
+        <button type="submit" class="primary-btn">Pin Note 💕</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function updateColorChoice(radio) {
+  document.querySelectorAll('.color-dot').forEach(dot => dot.classList.remove('selected'));
+  radio.nextElementSibling.classList.add('selected');
+}
+</script>
+{% endblock %}
