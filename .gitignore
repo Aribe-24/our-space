@@ -8,3 +8,10 @@ db.sqlite3
 .env
 venv/
 .DS_Store
+db.sqlite3
+media/
+__pycache__/
+*.pyc
+venv/
+.venv/
+.env
