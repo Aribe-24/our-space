@@ -3,8 +3,19 @@
 {% block title %}Our Day | {{ couple_settings.app_title }}{% endblock %}
 
 {% block content %}
+<header class="page-intro">
+  <div class="intro-copy">
+    <span class="eyebrow"><span>✦</span> YOUR LITTLE CORNER</span>
+    <h1>A space for <span>{{ my_profile.display_name|default:"Jojo" }} & {{ partner_profile.display_name|default:"Jay" }}.</span></h1>
+    <p>Two hearts, one shared local time <span aria-hidden="true">♡</span></p>
+  </div>
+  <div class="intro-flames" aria-hidden="true"><span>🔥</span><span class="flame-heart">♡</span><span>🔥</span></div>
+</header>
 <!-- 1. TIMEZONE & AWAKE STATUS (Side by Side) -->
 <section class="time-grid">
+  {% if partner_profile and my_profile.timezone == partner_profile.timezone %}
+  <div class="shared-time-note" role="status">🕰️ Same local time for both of you</div>
+  {% endif %}
   <!-- My Card -->
   <div class="time-card active-user" data-modal-open="profile-modal" style="cursor: pointer;" title="Tap to edit your city or timezone">
     <div>
@@ -34,7 +45,7 @@
     <div>
       <div class="time-card-avatar">{{ partner_profile.avatar_emoji|default:"💙" }}</div>
       <div class="time-card-name">{{ partner_profile.display_name|default:partner_user.username }}</div>
-      <div class="time-card-city">{{ partner_profile.city }}</div>
+      <button type="button" class="time-card-city location-edit" data-modal-open="partner-location-modal" aria-label="Edit Jay’s location">{{ partner_profile.city }} <span>✎ edit</span></button>
       <div class="time-card-clock" data-timezone="{{ partner_profile.timezone }}">
         {{ partner_profile.get_time_display }}
       </div>
@@ -72,6 +83,12 @@
     {% endif %}
   </div>
 </section>
+
+<a class="draw-quick-link" href="{% url 'doodles' %}">
+  <span class="draw-quick-icon">✏️</span>
+  <span><strong>Draw Jay a little something</strong><small>Send a doodle from your phone or computer</small></span>
+  <span class="draw-arrow">→</span>
+</a>
 
 <!-- 3. COUNTERS (Days Together & Next Reunion) — Clickable to edit -->
 <section class="counters-grid">

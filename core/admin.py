@@ -1,7 +1,7 @@
 from django.contrib import admin
 from .models import (
     UserProfile, CoupleSettings, DailyCheckIn, ThinkingOfYou,
-    DailyQuestion, DailyAnswer, DailyPhoto, LoveNote, Song, Milestone
+    DailyQuestion, DailyAnswer, DailyPhoto, Doodle, LoveNote, Song, Milestone
 )
 
 @admin.register(UserProfile)
@@ -36,6 +36,10 @@ class DailyAnswerAdmin(admin.ModelAdmin):
 class DailyPhotoAdmin(admin.ModelAdmin):
     list_display = ('user', 'date', 'caption', 'created_at')
     list_filter = ('user', 'date')
+
+@admin.register(Doodle)
+class DoodleAdmin(admin.ModelAdmin):
+    list_display = ('author', 'caption', 'created_at')
 
 @admin.register(LoveNote)
 class LoveNoteAdmin(admin.ModelAdmin):

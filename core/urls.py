@@ -16,6 +16,7 @@ urlpatterns = [
     path('dismiss-tap/<int:tap_id>/', views.dismiss_tap, name='dismiss_tap'),
     path('settings/update/', views.update_couple_settings, name='update_couple_settings'),
     path('profile/update/', views.update_profile, name='update_profile'),
+    path('partner/location/update/', views.update_partner_location, name='update_partner_location'),
 
     # Question of the Day
     path('questions/', views.questions_view, name='questions'),
@@ -25,6 +26,8 @@ urlpatterns = [
     path('photos/', views.photos_view, name='photos'),
     path('photos/upload/', views.upload_photo, name='upload_photo'),
     path('photos/<int:photo_id>/delete/', views.delete_photo, name='delete_photo'),
+    path('draw/', views.doodles_view, name='doodles'),
+    path('draw/send/', views.send_doodle, name='send_doodle'),
 
     # Love Notes
     path('notes/', views.notes_view, name='notes'),

@@ -1,0 +1,60 @@
+{% extends 'base.html' %}
+
+{% block title %}Draw something | {{ couple_settings.app_title }}{% endblock %}
+
+{% block content %}
+<header class="page-intro draw-intro">
+  <div class="intro-copy">
+    <span class="eyebrow"><span>✦</span> LITTLE THINGS, SENT WITH LOVE</span>
+    <h1>Draw Jay <span>a note.</span></h1>
+    <p>Use your finger or mouse. It goes straight to your shared space.</p>
+  </div>
+  <div class="intro-flames" aria-hidden="true"><span>✏️</span><span class="flame-heart">♡</span><span>💌</span></div>
+</header>
+
+<section class="drawing-card">
+  <div class="drawing-toolbar" aria-label="Drawing tools">
+    <div class="drawing-colors" aria-label="Choose a pen color">
+      <button type="button" class="color-swatch selected" data-ink="#381a2c" aria-label="Plum pen"></button>
+      <button type="button" class="color-swatch" data-ink="#e86e82" aria-label="Rose pen"></button>
+      <button type="button" class="color-swatch" data-ink="#e78b42" aria-label="Orange pen"></button>
+      <button type="button" class="color-swatch" data-ink="#397d75" aria-label="Teal pen"></button>
+    </div>
+    <label class="brush-size-label" for="brush-size">Pen</label>
+    <input id="brush-size" type="range" min="2" max="24" value="7" aria-label="Pen thickness">
+    <button id="doodle-undo" type="button" class="drawing-tool-btn">Undo</button>
+    <button id="doodle-clear" type="button" class="drawing-tool-btn">Clear</button>
+  </div>
+
+  <canvas id="doodle-canvas" width="1000" height="620" aria-label="Drawing canvas" role="application" tabindex="0"></canvas>
+
+  <form id="doodle-form" action="{% url 'send_doodle' %}" method="POST" enctype="multipart/form-data">
+    {% csrf_token %}
+    {{ doodle_form.image }}
+    <div class="drawing-send-row">
+      {{ doodle_form.caption }}
+      <button id="doodle-send" class="primary-btn" type="submit">Send to Jay <span aria-hidden="true">♡</span></button>
+    </div>
+  </form>
+  <p class="drawing-hint">Your drawing is private to the two of you. PNG drawings are limited to 5 MB.</p>
+</section>
+
+<section class="doodle-gallery">
+  <div class="section-heading">
+    <div><span class="eyebrow"><span>✦</span> FROM THE TWO OF YOU</span><h2>Shared doodles</h2></div>
+  </div>
+  {% if doodles %}
+  <div class="doodle-grid">
+    {% for doodle in doodles %}
+    <article class="doodle-item">
+      <img src="{{ doodle.image.url }}" alt="Drawing by {{ doodle.author.first_name|default:doodle.author.username }}" loading="lazy">
+      {% if doodle.caption %}<p>{{ doodle.caption }}</p>{% endif %}
+      <small>{{ doodle.author.first_name|default:doodle.author.username }} · {{ doodle.created_at|timesince }} ago</small>
+    </article>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="empty-doodles"><span>✏️</span><p>Your first doodle can go right here.</p></div>
+  {% endif %}
+</section>
+{% endblock %}

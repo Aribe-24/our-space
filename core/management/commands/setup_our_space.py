@@ -92,6 +92,7 @@ class Command(BaseCommand):
                 'is_superuser': True,
             }
         )
+        jojo.first_name = 'Jojo'
         jojo.set_password('jojolove')
         jojo.save()
         if created_jojo:
@@ -127,8 +128,8 @@ class Command(BaseCommand):
         # Profile for Jay
         jay_profile, _ = UserProfile.objects.get_or_create(user=jay)
         jay_profile.display_name = 'Jay'
-        jay_profile.city = 'London'  # Editable in settings
-        jay_profile.timezone = 'Europe/London'
+        jay_profile.city = jojo_profile.city
+        jay_profile.timezone = jojo_profile.timezone
         jay_profile.avatar_emoji = '💙'
         jay_profile.wake_hour = 7
         jay_profile.sleep_hour = 23

@@ -1,6 +1,6 @@
 # 💖 Our Space — Implementation Plan & Data Models
 
-A warm, private, mobile-first web app built for Jojo and Jay to share their days across the miles.
+A warm, private, mobile-first web app built for Jojo and Jay to share daily moments.
 
 ---
 
@@ -109,7 +109,7 @@ erDiagram
 
 1. **`UserProfile`**
    - Linked 1-to-1 with Django's `User` model.
-   - Stores `display_name` ("Jojo", "Jay"), `city` (e.g. "Kampala", "London"), IANA `timezone` (e.g. `Africa/Kampala`, `Europe/London`).
+   - Stores `display_name` ("Jojo", "Jay"), city or area, and each profile's IANA timezone.
    - Stores `sleep_hour` (default 23 / 11 PM) and `wake_hour` (default 7 / 7 AM).
    - Helper methods:
      - `get_local_datetime()`: converts UTC `now()` to the user's local time.

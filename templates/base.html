@@ -3,12 +3,12 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>{% block title %}{{ couple_settings.app_title }}{% endblock %}</title>
-  <link rel="stylesheet" href="{% static 'css/style.css' %}">
+  <link rel="stylesheet" href="{% static 'css/style.css' %}?v=shared-place-2">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220%22><text y=%2226%22 font-size=%2226%22>💖</text></svg>">
-  <meta name="theme-color" content="#FFFBF7">
+  <meta name="theme-color" content="#180D18">
   {% block extra_head %}{% endblock %}
 </head>
 <body>
@@ -62,11 +62,15 @@
 
     <!-- System Messages -->
     {% if messages %}
-    <ul class="messages-list">
+    <div class="toast-stack" aria-live="polite" aria-relevant="additions">
       {% for message in messages %}
-      <li class="alert alert-{{ message.tags }}">{{ message }}</li>
+      <div class="activity-toast toast-{{ message.tags|default:'info' }}" role="status">
+        <span class="toast-mark">{% if 'success' in message.tags %}✦{% elif 'error' in message.tags %}×{% else %}♡{% endif %}</span>
+        <span>{{ message }}</span>
+        <button type="button" class="toast-dismiss" aria-label="Dismiss notification">×</button>
+      </div>
       {% endfor %}
-    </ul>
+    </div>
     {% endif %}
 
     {% endif %}
@@ -90,6 +94,10 @@
       <a href="{% url 'photos' %}" class="nav-item {% if request.resolver_match.url_name == 'photos' %}active{% endif %}">
         <span class="nav-icon">📷</span>
         <span>Photos</span>
+      </a>
+      <a href="{% url 'doodles' %}" class="nav-item {% if request.resolver_match.url_name == 'doodles' %}active{% endif %}">
+        <span class="nav-icon">✏️</span>
+        <span>Draw</span>
       </a>
       <a href="{% url 'notes' %}" class="nav-item {% if request.resolver_match.url_name == 'notes' %}active{% endif %}">
         <span class="nav-icon">💌</span>
@@ -153,11 +161,11 @@
           {{ profile_form.display_name }}
         </div>
         <div class="form-group">
-          <label class="form-label">Your City</label>
+          <label class="form-label">Your City or Area</label>
           {{ profile_form.city }}
         </div>
         <div class="form-group">
-          <label class="form-label">IANA Timezone (e.g. Africa/Kampala, Europe/London)</label>
+          <label class="form-label">Timezone (for example, Africa/Kampala)</label>
           {{ profile_form.timezone }}
         </div>
         <div class="form-group">
@@ -181,9 +189,35 @@
       </form>
     </div>
   </div>
+
+  <div id="partner-location-modal" class="modal-overlay">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 class="modal-title">📍 Jay’s location</h3>
+        <button class="icon-btn" data-modal-close="true" aria-label="Close">✕</button>
+      </div>
+      <p class="modal-help">Keep Jay’s location the same as yours with one tap.</p>
+      <form action="{% url 'update_partner_location' %}" method="POST">
+        {% csrf_token %}
+        <button type="button" class="secondary-btn location-copy-btn" data-copy-my-location>Use my location</button>
+        <div class="form-group">
+          <label class="form-label" for="partner-city">City or area</label>
+          <input class="form-input" id="partner-city" name="city" value="{{ partner_profile.city|default:'Kampala' }}" maxlength="100" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="partner-timezone">Timezone</label>
+          <input class="form-input" id="partner-timezone" name="timezone" value="{{ partner_profile.timezone|default:'Africa/Kampala' }}" required>
+        </div>
+        <div class="form-row-btns">
+          <button type="button" class="secondary-btn" data-modal-close="true">Cancel</button>
+          <button type="submit" class="primary-btn">Save Jay’s location</button>
+        </div>
+      </form>
+    </div>
+  </div>
   {% endif %}
 
-  <script src="{% static 'js/main.js' %}"></script>
+  <script src="{% static 'js/main.js' %}?v=shared-place-2"></script>
   {% block extra_js %}{% endblock %}
 </body>
 </html>

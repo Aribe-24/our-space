@@ -1,7 +1,7 @@
 from django import forms
 from .models import (
     DailyCheckIn, CoupleSettings, UserProfile,
-    DailyAnswer, DailyPhoto, LoveNote, Song, Milestone
+    DailyAnswer, DailyPhoto, Doodle, LoveNote, Song, Milestone
 )
 
 MOOD_CHOICES = [
@@ -90,6 +90,30 @@ class DailyPhotoForm(forms.ModelForm):
                 'maxlength': '280',
             }),
         }
+
+
+class DoodleForm(forms.ModelForm):
+    image = forms.ImageField(required=False)
+
+    class Meta:
+        model = Doodle
+        fields = ['image', 'caption']
+        widgets = {
+            'image': forms.FileInput(attrs={'accept': 'image/png', 'class': 'visually-hidden'}),
+            'caption': forms.TextInput(attrs={
+                'class': 'form-input',
+                'placeholder': 'Add a little message (optional)',
+                'maxlength': '180',
+            }),
+        }
+
+    def clean_image(self):
+        image = self.cleaned_data.get('image')
+        if not image:
+            raise forms.ValidationError('Draw something first, then send it to Jay.')
+        if image.size > 5 * 1024 * 1024:
+            raise forms.ValidationError('Keep drawings under 5 MB, please.')
+        return image
 
 
 class LoveNoteForm(forms.ModelForm):

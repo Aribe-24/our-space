@@ -1,13 +1,13 @@
 # 💖 Our Space
 
-A warm, private, mobile-first web app created for **Jojo** and **Jay** to share their days across the miles. Built with Python, Django, SQLite, and vanilla HTML/CSS/JavaScript with zero heavy frontend frameworks.
+A warm, private, mobile-first web app created for **Jojo** and **Jay** to share daily moments. Built with Python, Django, SQLite, and vanilla HTML/CSS/JavaScript with zero heavy frontend frameworks.
 
 ---
 
 ## ✨ Features
 
 1. **"Our Day" Dashboard**:
-   - **Side-by-side Local Clocks**: Live clocks for Kampala (Jojo) and London/Jay with context-aware awake and asleep indicators (🌙, ☕, ☀️, 🌆).
+   - **Side-by-side Local Clocks**: Live clocks with context-aware awake and asleep indicators (🌙, ☕, ☀️, 🌆), plus a shared-time cue when both profiles use the same timezone.
    - **Days Together Counter**: Counts elapsed days from your anniversary.
    - **Reunion Countdown**: Live countdown to the next time you see each other.
    - **In-App Quick Editors**: Tap the countdown or your avatar icon to change your city, timezone, anniversary date, or reunion date without touching code.
@@ -23,14 +23,16 @@ A warm, private, mobile-first web app created for **Jojo** and **Jay** to share 
 5. **Photo of the Day**:
    - Upload one photo a day with an optional caption.
    - Shared Polaroid-style memory gallery with full-screen lightbox.
-6. **Love Notes Wall**:
+6. **Draw & Send**:
+   - Sketch with a finger or mouse, choose a pen color, undo or clear, then send the drawing into your shared doodle gallery.
+7. **Love Notes Wall**:
    - Shared corkboard of colorful sticky notes (blush, cream, lavender, peach, plum).
    - Pin your favorite notes and inside jokes to the top 📌.
-7. **Playful Extras**:
+8. **Playful Extras**:
    - **This or That**: Pick options (e.g., *"Morning coffee in bed"* vs *"Late night dessert"*) to see if you match!
    - **Our Soundtrack**: Shared playlist of songs that remind you of each other with direct Spotify / YouTube links.
    - **Our Story**: Key milestones timeline.
-8. **Theme & Polish**:
+9. **Theme & Polish**:
    - Warm pinks, soft cream, and deep plum palette.
    - One-tap **Dark Mode** (intimate plum night theme).
    - Mobile-first bottom navigation dock.
@@ -80,7 +82,7 @@ Open your browser and visit:
 
 ## 🌍 Free / Cheap Deployment (For Jojo & Jay)
 
-Because you and Jay live in different countries, here are two simple, beginner-friendly ways to deploy this online so you can both access it from your phones:
+Here are two simple, beginner-friendly ways to deploy this online so you can both access it from your phones:
 
 ### Option A: PythonAnywhere (Easiest & Free)
 

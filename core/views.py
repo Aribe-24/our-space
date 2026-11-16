@@ -12,11 +12,11 @@ from django.views.decorators.http import require_POST
 from .models import (
     UserProfile, CoupleSettings, DailyCheckIn, ThinkingOfYou,
     DailyQuestion, DailyAnswer, DailyPhoto, LoveNote,
-    Song, Milestone, ThisOrThat, ThisOrThatVote
+    Song, Milestone, ThisOrThat, ThisOrThatVote, Doodle
 )
 from .forms import (
     DailyCheckInForm, CoupleSettingsForm, UserProfileForm, MOOD_CHOICES,
-    DailyAnswerForm, DailyPhotoForm, LoveNoteForm, SongForm, MilestoneForm
+    DailyAnswerForm, DailyPhotoForm, DoodleForm, LoveNoteForm, SongForm, MilestoneForm
 )
 
 
@@ -224,6 +224,36 @@ def update_profile(request):
     return redirect('dashboard')
 
 
+@login_required
+@require_POST
+def update_partner_location(request):
+    """Let either partner correct the other profile's city and timezone."""
+    partner = User.objects.exclude(pk=request.user.pk).first()
+    if not partner:
+        messages.error(request, 'Jay’s profile could not be found.')
+        return redirect('dashboard')
+    profile, _ = UserProfile.objects.get_or_create(
+        user=partner,
+        defaults={'display_name': partner.first_name or partner.username.title()},
+    )
+    city = request.POST.get('city', '').strip()
+    timezone_name = request.POST.get('timezone', '').strip()
+    try:
+        import zoneinfo
+        zoneinfo.ZoneInfo(timezone_name)
+        if not city:
+            raise ValueError('A city or area is required.')
+    except (zoneinfo.ZoneInfoNotFoundError, ValueError):
+        messages.error(request, 'Enter a city and a valid timezone, such as Africa/Kampala.')
+        return redirect('dashboard')
+
+    profile.city = city[:100]
+    profile.timezone = timezone_name[:100]
+    profile.save(update_fields=['city', 'timezone'])
+    messages.success(request, f"{profile.display_name}’s location is now {profile.city}.")
+    return redirect('dashboard')
+
+
 # ==============================================================================
 # QUESTION OF THE DAY (DOUBLE-BLIND REVEAL)
 # ==============================================================================
@@ -317,6 +347,31 @@ def photos_view(request):
         'today': today,
     }
     return render(request, 'core/photos.html', context)
+
+
+@login_required
+def doodles_view(request):
+    """A simple shared gallery and drawing pad."""
+    return render(request, 'core/doodles.html', {
+        'doodles': Doodle.objects.select_related('author')[:24],
+        'doodle_form': DoodleForm(),
+    })
+
+
+@login_required
+@require_POST
+def send_doodle(request):
+    form = DoodleForm(request.POST, request.FILES)
+    if form.is_valid():
+        doodle = form.save(commit=False)
+        doodle.author = request.user
+        doodle.save()
+        messages.success(request, 'Your drawing was sent to Jay 💌')
+    else:
+        for errors in form.errors.values():
+            for error in errors:
+                messages.error(request, error)
+    return redirect('doodles')
 
 
 @login_required

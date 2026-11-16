@@ -216,6 +216,20 @@ class DailyPhoto(models.Model):
         return f"Photo by {self.user.username} on {self.date}"
 
 
+class Doodle(models.Model):
+    """A quick drawing shared between the couple."""
+    author = models.ForeignKey(User, on_delete=models.CASCADE, related_name='doodles')
+    image = models.ImageField(upload_to='doodles/%Y/%m/')
+    caption = models.CharField(max_length=180, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"Doodle by {self.author.username} ({self.created_at:%b %d})"
+
+
 class LoveNote(models.Model):
     """
     A sticky love note or inside joke on the shared wall.
